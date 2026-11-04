@@ -1,0 +1,25 @@
+services:
+  - type: web
+    name: campus-laundry-app
+    env: docker
+    dockerfilePath: Dockerfile
+    plan: standard
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 5000
+      - key: CLIENT_URL
+        value: https://campus-laundry-app.onrender.com
+      - key: JWT_SECRET
+        generateValue: true
+      - key: USE_EMBEDDED_BROKER
+        value: "true"
+      - key: RAZORPAY_KEY_ID
+        sync: false
+      - key: RAZORPAY_KEY_SECRET
+        sync: false
+      - key: RAZORPAY_WEBHOOK_SECRET
+        sync: false
+      - key: ANTHROPIC_API_KEY
+        sync: false

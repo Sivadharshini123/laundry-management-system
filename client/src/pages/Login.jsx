@@ -1,328 +1,135 @@
-import { useState } from "react";
+import React, { useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
+import { Waves, Lock, Mail, AlertCircle } from 'lucide-react';
+import { useAuth } from '../context/AuthContext';
 
-function Login({
-    onLogin,
-    selectedRole,
-    onBack,
-    onSignup
-}) {
-    const [email, setEmail] = useState("");
-    const [password, setPassword] = useState("");
+export default function Login() {
+  const { login } = useAuth();
+  const navigate = useNavigate();
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
 
-    const [error, setError] = useState("");
-    const [loading, setLoading] = useState(false);
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setError('');
+    setLoading(true);
 
-    const isCustomer =
-        selectedRole === "customer";
+    try {
+      const res = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ college_email: email, password })
+      });
 
-    const handleSubmit = async (event) => {
-        event.preventDefault();
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.error || 'Login failed');
+      }
 
-        setError("");
-
-        if (!email || !password) {
-            setError(
-                "Email and password are required"
-            );
-            return;
-        }
-
-        setLoading(true);
-
-        try {
-            const response = await fetch(
-                "http://localhost:5000/api/auth/login",
-                {
-                    method: "POST",
-                    headers: {
-                        "Content-Type":
-                            "application/json"
-                    },
-                    credentials: "include",
-                    body: JSON.stringify({
-                        email,
-                        password
-                    })
-                }
-            );
-
-            const data = await response.json();
-
-            if (!response.ok) {
-                throw new Error(
-                    data.error ||
-                    "Login failed"
-                );
-            }
-
-            if (
-                selectedRole &&
-                data.user.role !== selectedRole
-            ) {
-                await fetch(
-                    "http://localhost:5000/api/auth/logout",
-                    {
-                        method: "POST",
-                        credentials: "include"
-                    }
-                );
-
-                throw new Error(
-                    `This account is not registered as a ${selectedRole}.`
-                );
-            }
-
-            onLogin(data.user);
-
-        } catch (error) {
-            console.error(error);
-
-            setError(
-                error.message ||
-                "Login failed"
-            );
-        } finally {
-            setLoading(false);
-        }
-    };
-
-    return (
-        <div style={styles.page}>
-
-            <div style={styles.card}>
-
-                <button
-                    onClick={onBack}
-                    style={styles.backButton}
-                >
-                    ← Back
-                </button>
-
-                <div style={styles.logo}>
-                    Laundry<span>Care</span>
-                </div>
-
-                <div style={styles.icon}>
-                    {isCustomer ? "🧺" : "⚙️"}
-                </div>
-
-                <p style={styles.tag}>
-                    {isCustomer
-                        ? "CUSTOMER PORTAL"
-                        : "ADMIN PORTAL"}
-                </p>
-
-                <h1>
-                    {isCustomer
-                        ? "Welcome back"
-                        : "Admin Sign In"}
-                </h1>
-
-                <p style={styles.subtitle}>
-                    {isCustomer
-                        ? "Sign in to manage your laundry orders."
-                        : "Sign in to manage LaundryCare."}
-                </p>
-
-                {error && (
-                    <div style={styles.error}>
-                        {error}
-                    </div>
-                )}
-
-                <form onSubmit={handleSubmit}>
-
-                    <label style={styles.label}>
-                        Email
-                    </label>
-
-                    <input
-                        type="email"
-                        placeholder="Enter your email"
-                        value={email}
-                        onChange={(event) =>
-                            setEmail(
-                                event.target.value
-                            )
-                        }
-                        style={styles.input}
-                    />
-
-                    <label style={styles.label}>
-                        Password
-                    </label>
-
-                    <input
-                        type="password"
-                        placeholder="Enter your password"
-                        value={password}
-                        onChange={(event) =>
-                            setPassword(
-                                event.target.value
-                            )
-                        }
-                        style={styles.input}
-                    />
-
-                    <button
-                        type="submit"
-                        disabled={loading}
-                        style={styles.loginButton}
-                    >
-                        {loading
-                            ? "Signing In..."
-                            : "Sign In"}
-                    </button>
-
-                </form>
-
-                {isCustomer && (
-                    <>
-                        <div style={styles.divider}>
-                            <span></span>
-                            <p>OR</p>
-                            <span></span>
-                        </div>
-
-                        <button
-                            onClick={onSignup}
-                            style={styles.signupButton}
-                        >
-                            Create Customer Account
-                        </button>
-                    </>
-                )}
-
-            </div>
-
-        </div>
-    );
-}
-
-const styles = {
-    page: {
-        minHeight: "100vh",
-        background: "#f8fafc",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        padding: "30px",
-        boxSizing: "border-box"
-    },
-
-    card: {
-        width: "100%",
-        maxWidth: "440px",
-        background: "white",
-        padding: "40px",
-        borderRadius: "18px",
-        boxShadow:
-            "0 10px 35px rgba(0,0,0,0.08)",
-        boxSizing: "border-box"
-    },
-
-    backButton: {
-        border: "none",
-        background: "transparent",
-        color: "#6b7280",
-        cursor: "pointer",
-        padding: 0,
-        fontSize: "14px",
-        marginBottom: "25px"
-    },
-
-    logo: {
-        fontSize: "26px",
-        fontWeight: "800",
-        color: "#111827",
-        marginBottom: "25px"
-    },
-
-    icon: {
-        fontSize: "38px",
-        marginBottom: "12px"
-    },
-
-    tag: {
-        fontSize: "11px",
-        letterSpacing: "2px",
-        fontWeight: "700",
-        color: "#6b7280",
-        marginBottom: "8px"
-    },
-
-    subtitle: {
-        color: "#6b7280",
-        lineHeight: "1.5",
-        marginBottom: "25px"
-    },
-
-    label: {
-        display: "block",
-        fontSize: "13px",
-        fontWeight: "600",
-        color: "#374151",
-        marginBottom: "7px",
-        marginTop: "16px"
-    },
-
-    input: {
-        width: "100%",
-        padding: "12px",
-        border: "1px solid #d1d5db",
-        borderRadius: "8px",
-        boxSizing: "border-box",
-        fontSize: "14px",
-        outline: "none"
-    },
-
-    loginButton: {
-        width: "100%",
-        marginTop: "25px",
-        padding: "13px",
-        border: "none",
-        borderRadius: "8px",
-        background: "#111827",
-        color: "white",
-        fontWeight: "700",
-        cursor: "pointer"
-    },
-
-    divider: {
-        display: "flex",
-        alignItems: "center",
-        gap: "12px",
-        margin: "25px 0"
-    },
-
-    dividerSpan: {
-        flex: 1
-    },
-
-    dividerText: {
-        color: "#9ca3af",
-        fontSize: "12px"
-    },
-
-    signupButton: {
-        width: "100%",
-        padding: "12px",
-        border: "1px solid #d1d5db",
-        borderRadius: "8px",
-        background: "white",
-        color: "#111827",
-        fontWeight: "600",
-        cursor: "pointer"
-    },
-
-    error: {
-        background: "#fee2e2",
-        color: "#991b1b",
-        padding: "10px 12px",
-        borderRadius: "8px",
-        marginBottom: "15px",
-        fontSize: "14px"
+      login(data.token, data.user);
+      if (data.user.role === 'staff') {
+        navigate('/staff');
+      } else {
+        navigate('/');
+      }
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
     }
-};
+  };
 
-export default Login;
+  return (
+    <div className="min-h-[calc(100vh-4rem)] flex items-center justify-center p-4">
+      <div className="max-w-md w-full bg-white rounded-2xl shadow-xl border border-slate-200/80 p-8 space-y-6">
+        <div className="text-center space-y-2">
+          <div className="inline-flex p-3 rounded-2xl bg-blue-50 text-blue-600 mb-1">
+            <Waves className="w-8 h-8" />
+          </div>
+          <h1 className="text-2xl font-bold text-slate-900 tracking-tight">Welcome back</h1>
+          <p className="text-xs text-slate-500">Sign in with your campus college email credentials</p>
+        </div>
+
+        {error && (
+          <div className="p-3 bg-rose-50 border border-rose-200 rounded-xl flex items-center space-x-2 text-xs text-rose-700">
+            <AlertCircle className="w-4 h-4 shrink-0" />
+            <span>{error}</span>
+          </div>
+        )}
+
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div>
+            <label className="block text-xs font-semibold text-slate-700 mb-1.5">College Email</label>
+            <div className="relative">
+              <Mail className="w-4 h-4 text-slate-400 absolute left-3 top-3.5" />
+              <input
+                type="email"
+                required
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="student1@college.edu"
+                className="w-full pl-9 pr-4 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
+          </div>
+
+          <div>
+            <label className="block text-xs font-semibold text-slate-700 mb-1.5">Password</label>
+            <div className="relative">
+              <Lock className="w-4 h-4 text-slate-400 absolute left-3 top-3.5" />
+              <input
+                type="password"
+                required
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="••••••••"
+                className="w-full pl-9 pr-4 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
+          </div>
+
+          <button
+            type="submit"
+            disabled={loading}
+            className="w-full py-2.5 px-4 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-sm font-semibold shadow-md shadow-blue-500/20 transition-all disabled:opacity-50"
+          >
+            {loading ? 'Signing in...' : 'Sign In'}
+          </button>
+        </form>
+
+        {/* Demo Credentials Helper */}
+        <div className="pt-4 border-t border-slate-100 text-xs text-slate-500 space-y-1.5 bg-slate-50 -mx-8 -mb-8 p-6 rounded-b-2xl">
+          <p className="font-semibold text-slate-700">Demo Accounts (Password: Password123!)</p>
+          <div className="flex flex-wrap gap-2 text-[11px]">
+            <button
+              type="button"
+              onClick={() => { setEmail('student1@college.edu'); setPassword('Password123!'); }}
+              className="px-2 py-1 bg-white border border-slate-200 rounded text-blue-600 hover:bg-blue-50"
+            >
+              Student 1
+            </button>
+            <button
+              type="button"
+              onClick={() => { setEmail('student2@college.edu'); setPassword('Password123!'); }}
+              className="px-2 py-1 bg-white border border-slate-200 rounded text-blue-600 hover:bg-blue-50"
+            >
+              Student 2
+            </button>
+            <button
+              type="button"
+              onClick={() => { setEmail('staff@college.edu'); setPassword('Password123!'); }}
+              className="px-2 py-1 bg-white border border-slate-200 rounded text-amber-700 hover:bg-amber-50"
+            >
+              Staff Portal
+            </button>
+          </div>
+          <p className="pt-2 text-center text-slate-500">
+            Don't have an account? <Link to="/register" className="text-blue-600 font-semibold hover:underline">Register</Link>
+          </p>
+        </div>
+      </div>
+    </div>
+  );
+}
