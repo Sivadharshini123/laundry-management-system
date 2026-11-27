@@ -1,8 +1,8 @@
-# Campus Laundry Booking & Telemetry Web Application
+LaundryMart
 
-A full-stack web application for a college laundry service serving ~100 students across two campus facilities (Laundry A and Laundry B) with 14 commercial washing machines and dryers in total (7 machines per facility).
+A full-stack web application for a college laundry service serving 
 
-The application is built for desktop and mobile browsers, features real-time Socket.IO synchronization, an MQTT IoT hardware telemetry simulator, test-mode Razorpay checkout with byte-verified webhooks and full refunds, and an Anthropic Claude Haiku RAG assistant.
+The application is built for desktop and mobile browsers, features real-time Socket.IO synchronization, an MQTT IoT hardware telemetry simulator, 
 
 ---
 
@@ -14,9 +14,7 @@ The application is built for desktop and mobile browsers, features real-time Soc
 flowchart TD
     subgraph Client ["Client Layer (React / Vite)"]
         UI["Student & Staff Web App (React + Tailwind)"]
-        SocketClient["Socket.IO Client"]
-        RzpCheckout["Razorpay Checkout Modal"]
-    end
+        
 
     subgraph Backend ["Backend Layer (Node.js / Express)"]
         API["Express REST API (Auth, Bookings, Staff, Chat)"]
@@ -24,8 +22,7 @@ flowchart TD
         Webhook["Raw Webhook Handler (HMAC-SHA256)"]
         Watchdog["30s Telemetry Watchdog & 1m Hold Cleaner"]
         Ingestion["MQTT Ingestion Service (Subscriber)"]
-        RAG["Anthropic Claude Haiku 5.5 + RAG & Scoped Tools"]
-    end
+        
 
     subgraph IoT ["IoT Layer (Simulated or Real Hardware)"]
         Mosquitto["Mosquitto MQTT Broker (:1883)"]
@@ -86,9 +83,9 @@ sequenceDiagram
 
 ## 2. Tech Stack
 
-- **Frontend**: React (Vite), React Router DOM v6, Tailwind CSS, Lucide Icons, Socket.IO Client.
+- **Frontend**: React (Vite), React Router
 - **Backend**: Node.js with Express, Socket.IO, `mqtt` client, `bcryptjs`, `jsonwebtoken`, `zod` input validation, `helmet`, `cors`, and `express-rate-limit`.
-- **Database**: PostgreSQL with `btree_gist` (exclusion constraint overlap prevention) and `pgvector` (vector cosine similarity for RAG).
+- **Database**: PostgreSQL with `btree_gist` 
 - **Messaging**: MQTT (Mosquitto broker), with an embedded Aedes broker option for offline local development.
 - **Payments**: Razorpay test mode with server order creation, raw-body HMAC SHA256 webhook signatures, and automated refunds.
 - **AI Assistant**: Anthropic SDK (`claude-haiku-5-5`) with tool calling (`get_my_bookings`, `get_transaction_status`, `get_machine_status`) and RAG over public markdown documentation.
@@ -99,7 +96,7 @@ sequenceDiagram
 ## 3. Project Structure
 
 ```
-├── docker-compose.yml          # PostgreSQL (pgvector + btree_gist) & Mosquitto broker
+├── docker-compose.yml          # PostgreSQL & Mosquitto broker
 ├── mosquitto/config/           # Mosquitto broker configuration
 ├── client/                     # React Vite application
 │   ├── src/
@@ -163,12 +160,6 @@ This seeds:
 - 2 Laundries: Laundry A (North Residence) and Laundry B (South Commons)
 - 14 Machines with prices, slot durations, and idle states.
 
-### Step 4: Index RAG Knowledge Base
-Reindex the 10 markdown documentation files into vector chunks:
-```bash
-cd server
-npm run index-docs
-```
 
 ### Step 5: Start the IoT Simulator
 In a separate terminal:
@@ -176,7 +167,7 @@ In a separate terminal:
 cd iot-simulator
 npm start
 ```
-The simulator connects to the MQTT broker, initializes 14 virtual devices, emits 30s heartbeats, and starts an HTTP control API on port 5001.
+The simulator connects to the MQTT broker, initializes 14 virtual devices
 
 ### Step 6: Start Backend Server
 In another terminal:
@@ -207,14 +198,14 @@ npm test
 ### Tested Criteria:
 1. Two students cannot book overlapping slots on the same machine (PostgreSQL EXCLUDE constraint 23P01).
 2. An unpaid hold expires after 5 minutes and releases the slot.
-3. A duplicate Razorpay webhook does not change a booking twice (idempotent `UPDATE ... WHERE status = 'pending_payment'`).
+3. A duplicate Razorpay webhook does not change a booking twice.
 4. A webhook with an invalid HMAC signature is rejected.
 5. A paid booking whose machine never starts is marked `failed` after the 5-minute grace period and refunded in full.
 6. A student cancellation refunds 100% in full and immediately releases the slot.
 7. A payment captured without a valid booking is refunded in full automatically.
 8. A student cannot read another student's booking or transaction via chat tools (server-side authorization).
 9. The chat model never receives personal fields (strict tool serializer redacts names, emails, and phone numbers).
-10. Stale heartbeat (>90s) displays machine as "Status unknown," never "Available."
+
 
 ---
 
@@ -251,17 +242,12 @@ The backend ingestion layer (`server/src/services/ingestion.js`) was engineered 
    - Current drops back < 0.10A for >60s: `done`
 5. **No code, database, or API changes are required on the server or client.**
 
----
+--
 
-## 8. Embedding Vector Dimension Choice
-
-The database schema and RAG indexing script configure **1024-dimensional vector embeddings** (`VECTOR(1024)` in `knowledge_chunks`). This aligns with standard state-of-the-art retrieval embedding models (e.g. Voyage AI `voyage-3` / `voyage-3-lite` and Cohere `embed-english-v3.0`). 
-
-For offline development and unit tests where external API keys may not be present, the system includes a zero-dependency deterministic 1024-dimensional semantic projection embedding generator that satisfies cosine similarity queries in PostgreSQL.
 
 ---
 
-## 9. Demo Credentials
+## 8. Demo Credentials
 
 | Role | Email | Password | Permissions |
 |---|---|---|---|
