@@ -54,7 +54,6 @@ sequenceDiagram
     participant Client as React Client
     participant Server as Express Server
     participant DB as PostgreSQL
-    participant Rzp as Razorpay Test API
     participant IoT as MQTT Broker / IoT Sensors
 
     Student->>Client: Select Available Slot
@@ -67,8 +66,6 @@ sequenceDiagram
     Student->>Client: Complete Payment
     Rzp->>Server: POST /api/webhooks/razorpay (payment.captured)
     Server->>Server: Verify HMAC-SHA256 with express.raw()
-    Server->>DB: Idempotent UPDATE status = 'paid' WHERE status = 'pending_payment'
-    Server->>Client: Push in-app notification ('Booking confirmed')
 
     IoT->>Server: MQTT State Message (state: 'running', amps: 0.94A)
     Server->>DB: UPDATE booking status = 'running'
@@ -87,8 +84,6 @@ sequenceDiagram
 - **Backend**: Node.js with Express, Socket.IO, `mqtt` client, `bcryptjs`, `jsonwebtoken`, `zod` input validation, `helmet`, `cors`, and `express-rate-limit`.
 - **Database**: PostgreSQL with `btree_gist` 
 - **Messaging**: MQTT (Mosquitto broker), with an embedded Aedes broker option for offline local development.
-- **Payments**: Razorpay test mode with server order creation, raw-body HMAC SHA256 webhook signatures, and automated refunds.
-- **AI Assistant**: Anthropic SDK (`claude-haiku-5-5`) with tool calling (`get_my_bookings`, `get_transaction_status`, `get_machine_status`) and RAG over public markdown documentation.
 - **Testing**: Vitest with unit and integration suites covering all concurrency, webhook idempotency, data isolation, and watchdog rules.
 
 ---
@@ -102,18 +97,18 @@ sequenceDiagram
 │   ├── src/
 │   │   ├── context/            # AuthContext, SocketContext, NotificationContext
 │   │   ├── components/         # Navbar, StatusBadge, NotificationBell, RazorpayModal
-│   │   └── pages/              # StudentDashboard, LaundryDetail, MachineSlots, Transactions, ChatAssistant, StaffDashboard
+│   │   └── pages/              # StudentDashboard, LaundryDetail, MachineSlots, StaffDashboard
 ├── server/                     # Express backend API & services
 │   ├── src/
 │   │   ├── migrations/         # 001_initial_schema.sql, 002_add_vector_and_constraints.sql
 │   │   ├── seed/               # seed.js (1 staff, 3 students, 2 laundries, 14 machines)
-│   │   ├── services/           # bookingService, ingestion, paymentService, chatService, ragService, notificationService
+│   │   ├── services/           # bookingService, notificationService
 │   │   ├── routes/             # auth, laundries, machines, bookings, payments, webhooks, notifications, chat, staff
 │   │   └── socket/             # Socket.IO event handler
 │   ├── scripts/                # run-migrations.js, index-docs.js, e2e-demo.js
 │   └── test/                   # Vitest automated test suite (bookings, payments, ingestion, chat)
 ├── iot-simulator/              # 14-node virtual hardware simulator
-│   ├── simulator.js            # Cycle model (idle -> running -> done), heartbeats, amps
+│   ├── simulator.js            # Cycle model (idle -> running -> done),amps
 │   └── README.md               # Hardware specifications and ESP32 firmware guide
 └── docs/                       # RAG Knowledge base with YAML frontmatter
     ├── policies/               # booking-and-cancellation.md, refunds.md, privacy.md
@@ -204,7 +199,6 @@ npm test
 6. A student cancellation refunds 100% in full and immediately releases the slot.
 7. A payment captured without a valid booking is refunded in full automatically.
 8. A student cannot read another student's booking or transaction via chat tools (server-side authorization).
-9. The chat model never receives personal fields (strict tool serializer redacts names, emails, and phone numbers).
 
 
 ---
@@ -252,6 +246,6 @@ The backend ingestion layer (`server/src/services/ingestion.js`) was engineered 
 | Role | Email | Password | Permissions |
 |---|---|---|---|
 | Staff | `staff@college.edu` | `Password123!` | Full Staff Dashboard, machine management, audit logs, price/slot configs |
-| Student 1 | `student1@college.edu` | `Password123!` | Machine booking, cancellations, chat assistant, in-app alerts |
-| Student 2 | `student2@college.edu` | `Password123!` | Machine booking, cancellations, chat assistant, in-app alerts |
-| Student 3 | `student3@college.edu` | `Password123!` | Machine booking, cancellations, chat assistant, in-app alerts |
+| Student 1 | `student1@college.edu` | `Password123!` | Machine booking, cancellations, in-app alerts |
+| Student 2 | `student2@college.edu` | `Password123!` | Machine booking, cancellations, in-app alerts |
+| Student 3 | `student3@college.edu` | `Password123!` | Machine booking, cancellations, in-app alerts |
